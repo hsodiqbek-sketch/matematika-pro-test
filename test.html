@@ -8,74 +8,77 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; text-align: center; padding: 20px; }
         .quiz-container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .name-box { margin-bottom: 20px; padding: 20px; border: 2px dashed #1a73e8; border-radius: 10px; }
-        input { width: 80%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; }
-        .question { font-size: 18px; font-weight: bold; margin: 20px 0; text-align: left; background: #f8f9fa; padding: 10px; border-left: 4px solid #1a73e8; }
-        .opt { display: block; width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; text-align: left; background: #fff; transition: 0.2s; }
-        .opt:hover { background: #e8f0fe; border-color: #1a73e8; }
-        #quiz-content { display: none; }
-        .start-btn { margin-top:15px; padding:12px 25px; background:#1a73e8; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; }
+        .question { font-size: 18px; font-weight: bold; margin: 20px 0; text-align: left; padding: 10px; border-left: 4px solid #1a73e8; }
+        .opt { display: block; width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; text-align: left; background: #fff; }
+        #quiz-content, #timer { display: none; }
+        #timer { color: red; font-size: 20px; font-weight: bold; margin-bottom: 10px; }
+        img { max-width: 100%; border-radius: 10px; margin: 10px 0; }
     </style>
 </head>
 <body>
     <div class="quiz-container">
         <h1>🏆 USTOZ SOVRINI</h1>
-        
-        <div id="auth-box" class="name-box">
-            <h3>Ism va familiyangizni kiriting:</h3>
-            <input type="text" id="userName" placeholder="Masalan: Azizov Anvar">
-            <br>
-            <button class="start-btn" onclick="startQuiz()">Testni boshlash</button>
+        <div id="auth-box">
+            <input type="text" id="userName" placeholder="Ism va familiyangiz" style="width:80%; padding:10px; margin-bottom:10px;">
+            <br><button onclick="startQuiz()" style="padding:10px 20px; background:#1a73e8; color:white; border:none; border-radius:5px;">Boshlash</button>
         </div>
 
         <div id="quiz-content">
             <div id="timer">Vaqt: 60:00</div>
-            <hr>
-            <div id="quiz-box">Savollar yuklanmoqda...</div>
+            <div id="quiz-box">Yuklanmoqda...</div>
         </div>
     </div>
 
     <script>
-        // SIZNING FIREBASE MANZILINGIZ
-        const firebaseConfig = { databaseURL: "https://matematika-7e82f-default-rtdb.firebaseio.com/" };
+        const firebaseConfig = { databaseURL: "https://matematika-7e82f-default-rtdb.firebaseio.com" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        let currentUserName = "";
+        let currentUserName = "", score = 0, timeLeft = 3600;
 
         function startQuiz() {
             const name = document.getElementById("userName").value;
-            if (name.length < 5) {
-                alert("Iltimos, ism va familiyangizni to'liq kiriting!");
-                return;
-            }
+            if (name.length < 5) return alert("Ism-familiyangizni yozing!");
             currentUserName = name;
             document.getElementById("auth-box").style.display = "none";
             document.getElementById("quiz-content").style.display = "block";
+            document.getElementById("timer").style.display = "block";
+            startTimer();
             loadQuestions();
         }
 
+        function startTimer() {
+            const timerEl = document.getElementById("timer");
+            const interval = setInterval(() => {
+                let m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+                timerEl.innerText = `Vaqt: ${m}:${s < 10 ? '0'+s : s}`;
+                if (timeLeft <= 0) { clearInterval(interval); alert("Vaqt tugadi!"); location.reload(); }
+                timeLeft--;
+            }, 1000);
+        }
+
         function loadQuestions() {
-            db.ref("tests/Variant 1").on("value", (snapshot) => {
-                const data = snapshot.val();
-                const quizBox = document.getElementById("quiz-box");
+            db.ref("tests/Variant 1").on("value", (snap) => {
+                const data = snap.val();
+                const box = document.getElementById("quiz-box");
                 if (data) {
-                    quizBox.innerHTML = "";
-                    Object.values(data).forEach((q, index) => {
-                        let html = `<div class="question">${index+1}. ${q.question}</div>`;
+                    box.innerHTML = "";
+                    Object.values(data).forEach((q, i) => {
+                        let html = `<div class="question">${i+1}. ${q.question}</div>`;
+                        if(q.image) html += `<img src="${q.image}">`;
                         q.options.split(',').forEach(opt => {
-                            html += `<button class="opt" onclick="checkAnswer('${opt.trim()}', '${q.answer}')">${opt.trim()}</button>`;
+                            html += `<button class="opt" onclick="check(this, '${opt.trim()}', '${q.answer}')">${opt.trim()}</button>`;
                         });
-                        quizBox.innerHTML += html;
+                        box.innerHTML += html;
                     });
-                } else {
-                    quizBox.innerHTML = "Hozircha savollar mavjud emas.";
                 }
             });
         }
 
-        function checkAnswer(userAns, correctAns) {
-            if(userAns === correctAns) alert("✅ Barakalla, to'g'ri!");
-            else alert("❌ Xato! To'g'ri javob: " + correctAns);
+        function check(btn, userAns, correctAns) {
+            btn.parentElement.querySelectorAll('button').forEach(b => b.disabled = true);
+            if(userAns === correctAns) { btn.style.background = "#d4edda"; score++; }
+            else btn.style.background = "#f8d7da";
+            db.ref("results/" + currentUserName.replace(/\s+/g, '_')).set({ ism: currentUserName, ball: score, vaqt: new Date().toLocaleString() });
         }
     </script>
 </body>
