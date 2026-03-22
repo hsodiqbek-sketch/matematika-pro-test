@@ -2,34 +2,41 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>USTOZ SOVRINI – MATH QUIZ</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; text-align: center; padding: 20px; }
-        .quiz-container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .question { font-size: 18px; font-weight: bold; margin: 20px 0; text-align: left; padding: 10px; border-left: 4px solid #1a73e8; }
-        .opt { display: block; width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; text-align: left; background: #fff; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; text-align: center; padding: 15px; margin: 0; }
+        .quiz-container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .question { font-size: 18px; font-weight: bold; margin: 20px 0; text-align: left; padding: 10px; border-left: 5px solid #1a73e8; background: #f8f9fa; }
+        .opt { display: block; width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; text-align: left; background: #fff; font-size: 16px; transition: 0.3s; }
+        .opt:hover { background: #e8f0fe; }
+        img { max-width: 100%; border-radius: 10px; margin: 10px 0; border: 1px solid #eee; display: block; margin-left: auto; margin-right: auto; }
         #quiz-content, #timer { display: none; }
-        #timer { color: red; font-size: 20px; font-weight: bold; margin-bottom: 10px; }
-        img { max-width: 100%; border-radius: 10px; margin: 10px 0; border: 1px solid #eee; }
+        #timer { color: #d93025; font-size: 22px; font-weight: bold; margin-bottom: 15px; }
+        input#userName { width: 90%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; }
+        button#startBtn { padding: 12px 30px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="quiz-container">
         <h1>🏆 USTOZ SOVRINI</h1>
         <div id="auth-box">
-            <input type="text" id="userName" placeholder="Ism va familiyangiz" style="width:80%; padding:10px; margin-bottom:10px;">
-            <br><button onclick="startQuiz()" style="padding:10px 20px; background:#1a73e8; color:white; border:none; border-radius:5px; cursor:pointer;">Boshlash</button>
+            <input type="text" id="userName" placeholder="Ism va familiyangiz">
+            <br>
+            <button id="startBtn" onclick="startQuiz()">Boshlash</button>
         </div>
 
         <div id="quiz-content">
             <div id="timer">Vaqt: 60:00</div>
+            <hr>
             <div id="quiz-box">Yuklanmoqda...</div>
         </div>
     </div>
 
     <script>
+        // DIQQAT: Manzil to'liq kiritildi
         const firebaseConfig = {
             databaseURL: "https://matematika-7e82f-default-rtdb.europe-west1.firebasedatabase.app/"
         };
@@ -39,7 +46,7 @@
 
         function startQuiz() {
             const name = document.getElementById("userName").value;
-            if (name.length < 5) return alert("Ism-familiyangizni to'liq yozing!");
+            if (name.length < 5) return alert("Iltimos, ism va familiyangizni to'liq yozing!");
             currentUserName = name;
             document.getElementById("auth-box").style.display = "none";
             document.getElementById("quiz-content").style.display = "block";
@@ -49,10 +56,9 @@
         }
 
         function startTimer() {
-            const timerEl = document.getElementById("timer");
             const interval = setInterval(() => {
                 let m = Math.floor(timeLeft / 60), s = timeLeft % 60;
-                timerEl.innerText = `Vaqt: ${m}:${s < 10 ? '0'+s : s}`;
+                document.getElementById("timer").innerText = `Vaqt: ${m}:${s < 10 ? '0'+s : s}`;
                 if (timeLeft <= 0) { clearInterval(interval); alert("Vaqt tugadi!"); location.reload(); }
                 timeLeft--;
             }, 1000);
@@ -65,6 +71,38 @@
                 if (data) {
                     box.innerHTML = "";
                     Object.values(data).forEach((q, i) => {
-                        let html = `<div class="question">${i+1}. ${q.question}</div>`;
-                        if(q.image
-                           
+                        let html = `<div class="question">${i+1}. ${q.question || "Savol"}</div>`;
+                        if(q.image) html += `<img src="${q.image}">`;
+                        if(q.options) {
+                            q.options.split(',').forEach(opt => {
+                                html += `<button class="opt" onclick="check(this, '${opt.trim()}', '${q.answer}')">${opt.trim()}</button>`;
+                            });
+                        }
+                        box.innerHTML += html;
+                    });
+                } else {
+                    box.innerHTML = "Hozircha savollar mavjud emas.";
+                }
+            });
+        }
+
+        function check(btn, userAns, correctAns) {
+            btn.parentElement.querySelectorAll('button').forEach(b => b.disabled = true);
+            if(userAns === correctAns) { 
+                btn.style.background = "#d4edda"; 
+                btn.style.borderColor = "#28a745";
+                score++; 
+            } else { 
+                btn.style.background = "#f8d7da"; 
+                btn.style.borderColor = "#dc3545";
+            }
+            
+            db.ref("results/" + currentUserName.replace(/\s+/g, '_')).set({
+                ism: currentUserName,
+                ball: score,
+                vaqt: new Date().toLocaleString()
+            });
+        }
+    </script>
+</body>
+</html>
