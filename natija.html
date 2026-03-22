@@ -5,53 +5,78 @@
     <title>Natijalar - USTOZ SOVRINI</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        h2 { color: #2c3e50; text-align: center; }
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; text-align: center; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background: #1a73e8; color: white; }
+        th { background: #1a73e8; color: white; cursor: pointer; }
         tr:nth-child(even) { background-color: #f9f9f9; }
+        .btn-excel { background: #27ae60; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>📊 O'quvchilar natijalari</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Ism-Familiya</th>
-                    <th>Ball</th>
-                    <th>Vaqt</th>
-                </tr>
-            </thead>
-            <tbody id="resBody"></tbody>
-        </table>
-    </div>
 
-    <script>
-        const firebaseConfig = {
-            // MANZIL TO'G'RILANDI:
-            databaseURL: "https://matematika-7e82f-default-rtdb.europe-west1.firebasedatabase.app/"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+<div class="container">
+    <h2>📊 "USTOZ SOVRINI" Natijalari</h2>
+    <button class="btn-excel" onclick="exportToExcel()">📥 Excelga yuklab olish (.xlsx)</button>
+    
+    <table id="resultsTable">
+        <thead>
+            <tr>
+                <th>O'rin</th>
+                <th>Ism-Familiya</th>
+                <th>Ball (To'g'ri javoblar)</th>
+                <th>Vaqt</th>
+            </tr>
+        </thead>
+        <tbody id="resBody">
+            <tr><td colspan="4">Yuklanmoqda...</td></tr>
+        </tbody>
+    </table>
+</div>
 
-        db.ref("results").on("value", (snap) => {
-            const body = document.getElementById("resBody");
-            body.innerHTML = "";
-            const data = snap.val();
-            if (data) {
-                Object.values(data).forEach(r => {
-                    body.innerHTML += `<tr>
-                        <td>${r.ism}</td>
-                        <td>${r.ball}</td>
+<script>
+    const firebaseConfig = {
+        databaseURL: "https://matematika-7e82f-default-rtdb.europe-west1.firebasedatabase.app/"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    db.ref("results").on("value", (snap) => {
+        const body = document.getElementById("resBody");
+        body.innerHTML = "";
+        const data = snap.val();
+        
+        if (data) {
+            // Natijalarni massivga olamiz va ball bo'yicha tartiblaymiz (Eng yuqori ball tepada)
+            let resultsArray = Object.values(data);
+            resultsArray.sort((a, b) => b.ball - a.ball);
+
+            resultsArray.forEach((r, index) => {
+                body.innerHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>**${r.ism}**</td>
+                        <td>${r.ball} ta</td>
                         <td>${r.vaqt}</td>
-                    </tr>`;
-                });
-            }
-        });
-    </script>
+                    </tr>
+                `;
+            });
+        } else {
+            body.innerHTML = "<tr><td colspan='4'>Hali natijalar yo'q.</td></tr>";
+        }
+    });
+
+    // Excelga eksport qilish funksiyasi
+    function exportToExcel() {
+        var table = document.getElementById("resultsTable");
+        var wb = XLSX.utils.table_to_book(table, {sheet: "Natijalar"});
+        XLSX.writeFile(wb, "Ustoz_Sovrini_Natijalar.xlsx");
+    }
+</script>
+
 </body>
-</html>
+    </html>
+    
