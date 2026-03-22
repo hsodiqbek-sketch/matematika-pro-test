@@ -2,68 +2,62 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <title>Matematika Pro - Test Markazi</title>
-    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
+    <title>USTOZ SOVRINI – MATH QUIZ</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-        body { font-family: 'Arial', sans-serif; background: #eef2f3; margin: 0; padding: 20px; }
-        .quiz-card { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-        .q-text { font-size: 20px; margin-bottom: 20px; color: #2c3e50; font-weight: bold; }
-        .option-btn { display: block; width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; text-align: left; transition: 0.3s; }
-        .option-btn:hover { background: #3498db; color: white; }
-        .timer { float: right; color: #e74c3c; font-size: 18px; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; text-align: center; margin: 0; padding: 20px; }
+        .quiz-container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { color: #1a73e8; margin-bottom: 5px; }
+        .subtitle { color: #5f6368; margin-bottom: 20px; font-size: 14px; }
+        .question { font-size: 20px; font-weight: bold; margin: 25px 0; text-align: left; border-left: 5px solid #1a73e8; padding-left: 15px; }
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        button.opt { padding: 15px; border: 2px solid #e8eaed; border-radius: 10px; cursor: pointer; background: #fff; transition: 0.3s; font-size: 16px; text-align: left; }
+        button.opt:hover { background: #f8f9fa; border-color: #1a73e8; }
+        #timer { color: #d93025; font-weight: bold; font-size: 18px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-
-<div class="quiz-card">
-    <div class="timer" id="timer">60:00</div>
-    <div id="quiz-box">
-        <h2 id="cat-name">Yuklanmoqda...</h2>
-        <div class="q-text" id="question">Savol yuklanishini kuting...</div>
-        <div id="options"></div>
+    <div class="quiz-container">
+        <h1>🏆 USTOZ SOVRINI</h1>
+        <div class="subtitle">Matematika fanidan intellektual bellashuv</div>
+        <div id="timer">Vaqt: 60:00</div>
+        <hr>
+        <div id="quiz-box">
+            <p>Yuklanmoqda...</p>
+        </div>
     </div>
-</div>
 
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyA92S-4QQbvPrNcdpxzzJg-...", 
-        authDomain: "matematika-7e82f.firebaseapp.com",
-        databaseURL: "https://matematika-7e82f-default-rtdb.firebaseio.com",
-        projectId: "matematika-7e82f",
-        appId: "1:951023279739:web:481c18388c..."
-    };
+    <script>
+        const firebaseConfig = { databaseURL: "https://matematika-7e82f-default-rtdb.firebaseio.com/" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    let currentQ = 0;
-    let questions = [];
-
-    // Bazadan testni olish (Masalan: SAT, Variant 1)
-    function loadTest(cat, vr) {
-        db.ref('tests/' + cat + '/variant_' + vr + '/questions').once('value', (snapshot) => {
-            questions = snapshot.val();
-            showQuestion();
+        db.ref("tests/Variant 1").on("value", (snapshot) => {
+            const data = snapshot.val();
+            const quizBox = document.getElementById("quiz-box");
+            if (data) {
+                quizBox.innerHTML = "";
+                Object.values(data).forEach((q, index) => {
+                    let html = `<div class="question">${index+1}. ${q.question}</div>`;
+                    html += `<div class="options-grid">`;
+                    q.options.split(',').forEach(opt => {
+                        html += `<button class="opt" onclick="check('${opt.trim()}', '${q.answer}')">${opt.trim()}</button>`;
+                    });
+                    html += `</div>`;
+                    quizBox.innerHTML += html;
+                });
+                if (window.MathJax) MathJax.typeset();
+            } else {
+                quizBox.innerHTML = "<p style='color:orange'>Hozircha savollar yo'q. Admin panel orqali 'Variant 1' nomi bilan savol qo'shing.</p>";
+            }
         });
-    }
 
-    function showQuestion() {
-        if(currentQ < questions.length) {
-            let q = questions[currentQ];
-            document.getElementById('question').innerText = q.q;
-            let optHTML = "";
-            q.options.forEach(o => {
-                optHTML += `<button class="option-btn" onclick="check('${o}')">${o}</button>`;
-            });
-            document.getElementById('options').innerHTML = optHTML;
-        } else {
-            alert("Test tugadi! Natijangiz hisoblanmoqda...");
+        function check(userAns, correctAns) {
+            if(userAns === correctAns) alert("✅ To'g'ri!");
+            else alert("❌ Xato! To'g'ri javob: " + correctAns);
         }
-    }
-
-    // Hozircha SAT Variant 1 ni yuklaymiz
-    loadTest('sat', 1);
-</script>
+    </script>
 </body>
 </html>
