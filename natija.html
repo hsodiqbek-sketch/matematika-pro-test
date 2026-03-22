@@ -1,1 +1,55 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>Natijalar - USTOZ SOVRINI</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background: #1a73e8; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📊 O'quvchilar natijalari</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Ism-Familiya</th>
+                    <th>Ball</th>
+                    <th>Vaqt</th>
+                </tr>
+            </thead>
+            <tbody id="resBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const firebaseConfig = { databaseURL: "https://matematika-7e82f-default-rtdb.firebaseio.com" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        db.ref("results").on("value", (snap) => {
+            const body = document.getElementById("resBody");
+            body.innerHTML = "";
+            const data = snap.val();
+            if (data) {
+                Object.values(data).forEach(r => {
+                    body.innerHTML += `<tr>
+                        <td>${r.ism}</td>
+                        <td>${r.ball}</td>
+                        <td>${r.vaqt}</td>
+                    </tr>`;
+                });
+            }
+        });
+    </script>
+</body>
+</html>
 
