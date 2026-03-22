@@ -6,38 +6,41 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 40px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
         .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
-        h2 { color: #2c3e50; text-align: center; margin-bottom: 20px; }
         input, textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
-        button:hover { background: #219150; }
-        .hint { font-size: 12px; color: #7f8c8d; margin-bottom: 15px; }
+        button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:active { background: #1e7e43; transform: scale(0.98); }
     </style>
 </head>
 <body>
     <div class="card">
         <h2>🚀 Test Yuklash</h2>
-        <input type="text" id="variant" placeholder="Variant nomi (masalan: Variant 1)">
-        <div class="hint">Eslatma: test.html sahifasi aynan "Variant 1"ni qidiradi.</div>
-        <textarea id="questions" rows="4" placeholder="Savol | A, B, C, D | To'g'ri javob"></textarea>
-        <div class="hint">Namuna: 5+5=? | 8, 9, 10, 11 | 10</div>
-        <button onclick="saveToFirebase()">Bazaga Yuborish</button>
+        <input type="text" id="variant" value="Variant 1" placeholder="Variant nomi">
+        <textarea id="questions" rows="5" placeholder="Savol | A, B, C, D | To'g'ri javob"></textarea>
+        <button id="sendBtn" onclick="saveToFirebase()">Bazaga Yuborish</button>
     </div>
 
     <script>
-        const firebaseConfig = { databaseURL: "https://matematika-7e82f-default-rtdb.firebaseio.com/" };
+        // Realtime Database havolasini qayta tekshiramiz
+        const firebaseConfig = {
+            databaseURL: "https://matematika-7e82f-default-rtdb.firebaseio.com"
+        };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
         function saveToFirebase() {
+            const btn = document.getElementById('sendBtn');
             const varNum = document.getElementById('variant').value;
             const qStr = document.getElementById('questions').value;
 
             if(!varNum || !qStr) return alert("Hamma joyni to'ldiring!");
 
             const parts = qStr.split('|');
-            if(parts.length < 3) return alert("Format noto'g'ri! Namuna kabi yozing.");
+            if(parts.length < 3) return alert("Format xato! '|' belgisini ishlating.");
+
+            btn.disabled = true;
+            btn.innerText = "Yuborilmoqda...";
 
             const newQ = {
                 question: parts[0].trim(),
@@ -45,12 +48,20 @@
                 answer: parts[2].trim()
             };
 
-            db.ref("tests/" + varNum).push(newQ).then(() => {
-                alert("Savol muvaffaqiyatli saqlandi!");
+            // Ma'lumotni saqlash
+            db.ref("tests/" + varNum).push(newQ)
+            .then(() => {
+                alert("Muvaffaqiyatli saqlandi!");
                 document.getElementById('questions').value = "";
-            }).catch(err => alert("Xato: " + err));
+                btn.disabled = false;
+                btn.innerText = "Bazaga Yuborish";
+            })
+            .catch(err => {
+                alert("Xato yuz berdi: " + err.message);
+                btn.disabled = false;
+                btn.innerText = "Bazaga Yuborish";
+            });
         }
     </script>
 </body>
-        </html>
-        
+</html>
