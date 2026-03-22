@@ -2,60 +2,99 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Panel - USTOZ SOVRINI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Savollarni Boshqarish</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
-        input, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; margin: 0; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        input, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button.delete-btn { background: #e74c3c; width: auto; padding: 5px 10px; font-size: 12px; }
+        .q-list { margin-top: 30px; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .q-item { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid #27ae60; display: flex; justify-content: space-between; align-items: center; }
+        img.thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; margin-right: 10px; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>🖼 Test Yuklash</h2>
-        <input type="text" id="variant" value="Variant_1">
-        <textarea id="questionText" placeholder="Savol matni"></textarea>
-        <input type="text" id="imgUrl" placeholder="Rasm linki (.jpg)">
-        <input type="text" id="options" placeholder="Variantlar (A, B, C, D)">
-        <input type="text" id="correct" placeholder="To'g'ri javob">
-        <button id="sendBtn" onclick="saveToFirebase()">Bazaga Yuborish</button>
-    </div>
 
-    <script>
-        const firebaseConfig = {
-            // MANZIL TO'G'RILANDI:
-            databaseURL: "https://matematika-7e82f-default-rtdb.europe-west1.firebasedatabase.app/"
+<div class="card">
+    <h3>➕ Yangi Savol Qo'shish</h3>
+    <input type="text" id="variant" value="Variant_1">
+    <textarea id="questionText" placeholder="Savol matni (ixtiyoriy)"></textarea>
+    <input type="text" id="imgUrl" placeholder="Rasm linki (Direct Link)">
+    <input type="text" id="options" placeholder="Variantlar (masalan: A, B, C, D)">
+    <input type="text" id="correct" placeholder="To'g'ri javob (masalan: A)">
+    <button id="sendBtn" onclick="saveToFirebase()">Bazaga Yuborish</button>
+</div>
+
+<div class="q-list">
+    <h3>📋 Yuklangan Savollar</h3>
+    <div id="questionsContainer">Yuklanmoqda...</div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        databaseURL: "https://matematika-7e82f-default-rtdb.europe-west1.firebasedatabase.app/"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // SAVOLNI SAQLASH
+    function saveToFirebase() {
+        const btn = document.getElementById('sendBtn');
+        const variant = document.getElementById('variant').value;
+        const data = {
+            question: document.getElementById('questionText').value,
+            image: document.getElementById('imgUrl').value,
+            options: document.getElementById('options').value,
+            answer: document.getElementById('correct').value
         };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
 
-        function saveToFirebase() {
-            const btn = document.getElementById('sendBtn');
-            const data = {
-                question: document.getElementById('questionText').value,
-                image: document.getElementById('imgUrl').value,
-                options: document.getElementById('options').value,
-                answer: document.getElementById('correct').value
-            };
+        if(!data.options || !data.answer) return alert("Variantlar va javobni to'ldiring!");
 
-            if(!data.options || !data.answer) return alert("Variantlar va javobni to'liq yozing!");
+        btn.disabled = true;
+        btn.innerText = "Yuborilmoqda...";
 
-            btn.disabled = true;
-            btn.innerText = "Yuborilmoqda...";
+        db.ref("tests/" + variant).push(data).then(() => {
+            alert("Savol saqlandi!");
+            document.getElementById('questionText').value = "";
+            document.getElementById('imgUrl').value = "";
+            document.getElementById('options').value = "";
+            document.getElementById('correct').value = "";
+            btn.disabled = false;
+            btn.innerText = "Bazaga Yuborish";
+        });
+    }
 
-            db.ref("tests/Variant_1").push(data)
-                .then(() => {
-                    alert("Savol saqlandi!");
-                    location.reload(); 
-                })
-                .catch(e => {
-                    alert("Xatolik: " + e.message);
-                    btn.disabled = false;
-                    btn.innerText = "Qaytadan yuborish";
+    // SAVOLLARNI KO'RSATISH VA O'CHIRISH
+    function loadAdminQuestions() {
+        const variant = document.getElementById('variant').value;
+        db.ref("tests/" + variant).on("value", (snap) => {
+            const container = document.getElementById("questionsContainer");
+            container.innerHTML = "";
+            const data = snap.val();
+            if (data) {
+                Object.keys(data).forEach((id, index) => {
+                    const q = data[id];
+                    container.innerHTML += `
+                        <div class="q-item">
+                            <div style="display:flex; align-items:center;">
+                                ${q.image ? `<img src="${q.image}" class="thumb">` : ""}
+                                <span>${index + 1}. ${q.question.substring(0, 20)}...</span>
+                            </div>
+                            <button class="delete-btn" onclick="deleteQuestion('${id}')">O'chirish</button>
+                        </div>
+                    `;
                 });
-        }
-    </script>
-</body>
-</html>
+            } else {
+                container.innerHTML = "Savollar topilmadi.";
+            }
+        });
+    }
+
+    function deleteQuestion(id) {
+        if(confirm("Ushbu savolni o'chirmoqchimisiz?")) {
+            const variant =
+    
