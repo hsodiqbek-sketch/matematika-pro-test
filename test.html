@@ -3,106 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>USTOZ SOVRINI – MATH QUIZ</title>
+    <title>MATEMATIKA TEST - USTOZ SOVRINI</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; text-align: center; padding: 15px; margin: 0; }
-        .quiz-container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .question { font-size: 18px; font-weight: bold; margin: 20px 0; text-align: left; padding: 10px; border-left: 5px solid #1a73e8; background: #f8f9fa; }
-        .opt { display: block; width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; text-align: left; background: #fff; font-size: 16px; transition: 0.3s; }
-        .opt:hover { background: #e8f0fe; }
-        img { max-width: 100%; border-radius: 10px; margin: 10px 0; border: 1px solid #eee; display: block; margin-left: auto; margin-right: auto; }
-        #quiz-content, #timer { display: none; }
-        #timer { color: #d93025; font-size: 22px; font-weight: bold; margin-bottom: 15px; }
-        input#userName { width: 90%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; }
-        button#startBtn { padding: 12px 30px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; display: flex; justify-content: center; }
+        .quiz-container { width: 100%; max-width: 600px; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { color: #1a73e8; font-size: 24px; margin-bottom: 20px; }
+        .auth-box input { width: 90%; padding: 15px; margin-bottom: 15px; border: 2px solid #eee; border-radius: 10px; font-size: 16px; outline: none; transition: 0.3s; }
+        .auth-box input:focus { border-color: #1a73e8; }
+        .btn-start { background: #1a73e8; color: white; padding: 15px 40px; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-start:hover { background: #1557b0; }
+        
+        #timer { font-size: 22px; font-weight: bold; color: #d93025; margin-bottom: 20px; background: #fce8e6; padding: 10px; border-radius: 10px; display: inline-block; }
+        .question-card { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 15px; margin-bottom: 25px; border-left: 6px solid #1a73e8; }
+        .question-text { font-size: 18px; font-weight: bold; color: #202124; margin-bottom: 15px; }
+        .question-img { max-width: 100%; border-radius: 10px; margin-bottom: 15px; display: block; border: 1px solid #ddd; }
+        
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .option-btn { background: white; border: 2px solid #eee; padding: 12px 20px; border-radius: 10px; cursor: pointer; text-align: left; font-size: 16px; transition: 0.2s; }
+        .option-btn:hover { border-color: #1a73e8; background: #e8f0fe; }
+        .option-btn:disabled { cursor: not-allowed; opacity: 0.8; }
+        
+        #quiz-content { display: none; }
     </style>
 </head>
 <body>
-    <div class="quiz-container">
-        <h1>🏆 USTOZ SOVRINI</h1>
-        <div id="auth-box">
-            <input type="text" id="userName" placeholder="Ism va familiyangiz">
-            <br>
-            <button id="startBtn" onclick="startQuiz()">Boshlash</button>
-        </div>
 
-        <div id="quiz-content">
-            <div id="timer">Vaqt: 60:00</div>
-            <hr>
-            <div id="quiz-box">Yuklanmoqda...</div>
-        </div>
+<div class="quiz-container">
+    <div id="auth-box" class="auth-box">
+        <h1>🏆 USTOZ SOVRINI</h1>
+        <p>Ism va familiyangizni kiriting:</p>
+        <input type="text" id="userName" placeholder="Masalan: Ali Valiyev">
+        <br>
+        <button class="btn-start" onclick="startQuiz()">Boshlash</button>
     </div>
 
-    <script>
-        // DIQQAT: Manzil to'liq kiritildi
-        const firebaseConfig = {
-            databaseURL: "https://matematika-7e82f-default-rtdb.europe-west1.firebasedatabase.app/"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        let currentUserName = "", score = 0, timeLeft = 3600;
+    <div id="quiz-content">
+        <div id="timer">Vaqt: 60:00</div>
+        <div id="quiz-box">Yuklanmoqda...</div>
+    </div>
+</div>
 
-        function startQuiz() {
-            const name = document.getElementById("userName").value;
-            if (name.length < 5) return alert("Iltimos, ism va familiyangizni to'liq yozing!");
-            currentUserName = name;
-            document.getElementById("auth-box").style.display = "none";
-            document.getElementById("quiz-content").style.display = "block";
-            document.getElementById("timer").style.display = "block";
-            startTimer();
-            loadQuestions();
-        }
+<script>
+    const firebaseConfig = {
+        databaseURL: "https://matematika-7e82f-default-rtdb.europe-west1.firebasedatabase.app/"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-        function startTimer() {
-            const interval = setInterval(() => {
-                let m = Math.floor(timeLeft / 60), s = timeLeft % 60;
-                document.getElementById("timer").innerText = `Vaqt: ${m}:${s < 10 ? '0'+s : s}`;
-                if (timeLeft <= 0) { clearInterval(interval); alert("Vaqt tugadi!"); location.reload(); }
-                timeLeft--;
-            }, 1000);
-        }
+    let currentUserName = "";
+    let score = 0;
+    let timeLeft = 3600;
 
-        function loadQuestions() {
-            db.ref("tests/Variant_1").on("value", (snap) => {
-                const data = snap.val();
-                const box = document.getElementById("quiz-box");
-                if (data) {
-                    box.innerHTML = "";
-                    Object.values(data).forEach((q, i) => {
-                        let html = `<div class="question">${i+1}. ${q.question || "Savol"}</div>`;
-                        if(q.image) html += `<img src="${q.image}">`;
-                        if(q.options) {
-                            q.options.split(',').forEach(opt => {
-                                html += `<button class="opt" onclick="check(this, '${opt.trim()}', '${q.answer}')">${opt.trim()}</button>`;
-                            });
-                        }
-                        box.innerHTML += html;
-                    });
-                } else {
-                    box.innerHTML = "Hozircha savollar mavjud emas.";
-                }
-            });
-        }
+    function startQuiz() {
+        const name = document.getElementById("userName").value;
+        if (name.trim().length < 5) return alert("Iltimos, ism va familiyangizni to'liq yozing!");
+        currentUserName = name.trim();
+        document.getElementById("auth-box").style.display = "none";
+        document.getElementById("quiz-content").style.display = "block";
+        startTimer();
+        loadQuestions();
+    }
 
-        function check(btn, userAns, correctAns) {
-            btn.parentElement.querySelectorAll('button').forEach(b => b.disabled = true);
-            if(userAns === correctAns) { 
-                btn.style.background = "#d4edda"; 
-                btn.style.borderColor = "#28a745";
-                score++; 
-            } else { 
-                btn.style.background = "#f8d7da"; 
-                btn.style.borderColor = "#dc3545";
+    function startTimer() {
+        const timerEl = document.getElementById("timer");
+        const timerInterval = setInterval(() => {
+            let m = Math.floor(timeLeft / 60);
+            let s = timeLeft % 60;
+            timerEl.innerText = `Vaqt: ${m}:${s < 10 ? '0'+s : s}`;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                alert("Vaqt tugadi!");
+                location.reload();
             }
-            
-            db.ref("results/" + currentUserName.replace(/\s+/g, '_')).set({
-                ism: currentUserName,
-                ball: score,
-                vaqt: new Date().toLocaleString()
-            });
+            timeLeft--;
+        }, 1000);
+    }
+
+    function loadQuestions() {
+        db.ref("tests/Variant_1").on("value", (snap) => {
+            const data = snap.val();
+            const box = document.getElementById("quiz-box");
+            if (!data) {
+                box.innerHTML = "Hozircha savollar mavjud emas.";
+                return;
+            }
+            box.innerHTML = "";
+            let i = 1;
+            for (let id in data) {
+                const q = data[id];
+                let html = `
+                    <div class="question-card">
+                        <div class="question-text">${i}. ${q.question || "Savolni yeching:"}</div>
+                        ${q.image ? `<img src="${q.image}" class="question-img">` : ""}
+                        <div class="options-grid" id="group_${id}">
+                `;
+                
+                if (q.options) {
+                    q.options.split(',').forEach(opt => {
+                        let cleanOpt = opt.trim();
+                        html += `<button class="option-btn" onclick="checkAnswer(this, '${id}', '${cleanOpt}', '${q.answer}')">${cleanOpt}</button>`;
+                    });
+                }
+                
+                html += `</div></div>`;
+                box.innerHTML += html;
+                i++;
+            }
+        });
+    }
+
+    function checkAnswer(btn, qId, userAns, correctAns) {
+        // Bir marta bosilgandan keyin variantlarni yopish
+        const group = document.getElementById("group_" + qId);
+        group.querySelectorAll('button').forEach(b => b.disabled = true);
+
+        if (userAns === correctAns) {
+            btn.style.background = "#d4edda";
+            btn.style.borderColor = "#28a745";
+            score++;
+        } else {
+            btn.style.background = "#f8d7da";
+            btn.style.borderColor = "#dc3545";
         }
-    </script>
+
+        // Natijani saqlash
+        db.ref("results/" + currentUserName.replace(/\s+/g, '_')).set({
+            ism: currentUserName,
+            ball: score,
+            vaqt: new Date().toLocaleString()
+        });
+    }
+</script>
+
 </body>
-</html>
+    </html>
+    
