@@ -12,7 +12,7 @@
         .opt { display: block; width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; text-align: left; background: #fff; }
         #quiz-content, #timer { display: none; }
         #timer { color: red; font-size: 20px; font-weight: bold; margin-bottom: 10px; }
-        img { max-width: 100%; border-radius: 10px; margin: 10px 0; }
+        img { max-width: 100%; border-radius: 10px; margin: 10px 0; border: 1px solid #eee; }
     </style>
 </head>
 <body>
@@ -20,7 +20,7 @@
         <h1>🏆 USTOZ SOVRINI</h1>
         <div id="auth-box">
             <input type="text" id="userName" placeholder="Ism va familiyangiz" style="width:80%; padding:10px; margin-bottom:10px;">
-            <br><button onclick="startQuiz()" style="padding:10px 20px; background:#1a73e8; color:white; border:none; border-radius:5px;">Boshlash</button>
+            <br><button onclick="startQuiz()" style="padding:10px 20px; background:#1a73e8; color:white; border:none; border-radius:5px; cursor:pointer;">Boshlash</button>
         </div>
 
         <div id="quiz-content">
@@ -30,14 +30,16 @@
     </div>
 
     <script>
-        const firebaseConfig = { databaseURL: "https://matematika-7e82f-default-rtdb.firebaseio.com" };
+        const firebaseConfig = {
+            databaseURL: "https://matematika-7e82f-default-rtdb.europe-west1.firebasedatabase.app/"
+        };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         let currentUserName = "", score = 0, timeLeft = 3600;
 
         function startQuiz() {
             const name = document.getElementById("userName").value;
-            if (name.length < 5) return alert("Ism-familiyangizni yozing!");
+            if (name.length < 5) return alert("Ism-familiyangizni to'liq yozing!");
             currentUserName = name;
             document.getElementById("auth-box").style.display = "none";
             document.getElementById("quiz-content").style.display = "block";
@@ -57,29 +59,12 @@
         }
 
         function loadQuestions() {
-            db.ref("tests/Variant 1").on("value", (snap) => {
+            db.ref("tests/Variant_1").on("value", (snap) => {
                 const data = snap.val();
                 const box = document.getElementById("quiz-box");
                 if (data) {
                     box.innerHTML = "";
                     Object.values(data).forEach((q, i) => {
                         let html = `<div class="question">${i+1}. ${q.question}</div>`;
-                        if(q.image) html += `<img src="${q.image}">`;
-                        q.options.split(',').forEach(opt => {
-                            html += `<button class="opt" onclick="check(this, '${opt.trim()}', '${q.answer}')">${opt.trim()}</button>`;
-                        });
-                        box.innerHTML += html;
-                    });
-                }
-            });
-        }
-
-        function check(btn, userAns, correctAns) {
-            btn.parentElement.querySelectorAll('button').forEach(b => b.disabled = true);
-            if(userAns === correctAns) { btn.style.background = "#d4edda"; score++; }
-            else btn.style.background = "#f8d7da";
-            db.ref("results/" + currentUserName.replace(/\s+/g, '_')).set({ ism: currentUserName, ball: score, vaqt: new Date().toLocaleString() });
-        }
-    </script>
-</body>
-</html>
+                        if(q.image
+                           
