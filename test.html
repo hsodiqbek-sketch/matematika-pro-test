@@ -5,57 +5,76 @@
     <title>USTOZ SOVRINI – MATH QUIZ</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; text-align: center; margin: 0; padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; text-align: center; padding: 20px; }
         .quiz-container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { color: #1a73e8; margin-bottom: 5px; }
-        .subtitle { color: #5f6368; margin-bottom: 20px; font-size: 14px; }
-        .question { font-size: 20px; font-weight: bold; margin: 25px 0; text-align: left; border-left: 5px solid #1a73e8; padding-left: 15px; }
-        .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-        button.opt { padding: 15px; border: 2px solid #e8eaed; border-radius: 10px; cursor: pointer; background: #fff; transition: 0.3s; font-size: 16px; text-align: left; }
-        button.opt:hover { background: #f8f9fa; border-color: #1a73e8; }
-        #timer { color: #d93025; font-weight: bold; font-size: 18px; margin-bottom: 10px; }
+        .name-box { margin-bottom: 20px; padding: 20px; border: 2px dashed #1a73e8; border-radius: 10px; }
+        input { width: 80%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; }
+        .question { font-size: 18px; font-weight: bold; margin: 20px 0; text-align: left; background: #f8f9fa; padding: 10px; border-left: 4px solid #1a73e8; }
+        .opt { display: block; width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; text-align: left; background: #fff; transition: 0.2s; }
+        .opt:hover { background: #e8f0fe; border-color: #1a73e8; }
+        #quiz-content { display: none; }
+        .start-btn { margin-top:15px; padding:12px 25px; background:#1a73e8; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; }
     </style>
 </head>
 <body>
     <div class="quiz-container">
         <h1>🏆 USTOZ SOVRINI</h1>
-        <div class="subtitle">Matematika fanidan intellektual bellashuv</div>
-        <div id="timer">Vaqt: 60:00</div>
-        <hr>
-        <div id="quiz-box">
-            <p>Yuklanmoqda...</p>
+        
+        <div id="auth-box" class="name-box">
+            <h3>Ism va familiyangizni kiriting:</h3>
+            <input type="text" id="userName" placeholder="Masalan: Azizov Anvar">
+            <br>
+            <button class="start-btn" onclick="startQuiz()">Testni boshlash</button>
+        </div>
+
+        <div id="quiz-content">
+            <div id="timer">Vaqt: 60:00</div>
+            <hr>
+            <div id="quiz-box">Savollar yuklanmoqda...</div>
         </div>
     </div>
 
     <script>
+        // SIZNING FIREBASE MANZILINGIZ
         const firebaseConfig = { databaseURL: "https://matematika-7e82f-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        let currentUserName = "";
 
-        db.ref("tests/Variant 1").on("value", (snapshot) => {
-            const data = snapshot.val();
-            const quizBox = document.getElementById("quiz-box");
-            if (data) {
-                quizBox.innerHTML = "";
-                Object.values(data).forEach((q, index) => {
-                    let html = `<div class="question">${index+1}. ${q.question}</div>`;
-                    html += `<div class="options-grid">`;
-                    q.options.split(',').forEach(opt => {
-                        html += `<button class="opt" onclick="check('${opt.trim()}', '${q.answer}')">${opt.trim()}</button>`;
-                    });
-                    html += `</div>`;
-                    quizBox.innerHTML += html;
-                });
-                if (window.MathJax) MathJax.typeset();
-            } else {
-                quizBox.innerHTML = "<p style='color:orange'>Hozircha savollar yo'q. Admin panel orqali 'Variant 1' nomi bilan savol qo'shing.</p>";
+        function startQuiz() {
+            const name = document.getElementById("userName").value;
+            if (name.length < 5) {
+                alert("Iltimos, ism va familiyangizni to'liq kiriting!");
+                return;
             }
-        });
+            currentUserName = name;
+            document.getElementById("auth-box").style.display = "none";
+            document.getElementById("quiz-content").style.display = "block";
+            loadQuestions();
+        }
 
-        function check(userAns, correctAns) {
-            if(userAns === correctAns) alert("✅ To'g'ri!");
+        function loadQuestions() {
+            db.ref("tests/Variant 1").on("value", (snapshot) => {
+                const data = snapshot.val();
+                const quizBox = document.getElementById("quiz-box");
+                if (data) {
+                    quizBox.innerHTML = "";
+                    Object.values(data).forEach((q, index) => {
+                        let html = `<div class="question">${index+1}. ${q.question}</div>`;
+                        q.options.split(',').forEach(opt => {
+                            html += `<button class="opt" onclick="checkAnswer('${opt.trim()}', '${q.answer}')">${opt.trim()}</button>`;
+                        });
+                        quizBox.innerHTML += html;
+                    });
+                } else {
+                    quizBox.innerHTML = "Hozircha savollar mavjud emas.";
+                }
+            });
+        }
+
+        function checkAnswer(userAns, correctAns) {
+            if(userAns === correctAns) alert("✅ Barakalla, to'g'ri!");
             else alert("❌ Xato! To'g'ri javob: " + correctAns);
         }
     </script>
