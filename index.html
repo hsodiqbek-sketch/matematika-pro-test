@@ -15,18 +15,18 @@
 <body>
     <div class="card">
         <h2>🖼 Test Yuklash</h2>
-        <input type="text" id="variant" value="Variant 1">
+        <input type="text" id="variant" value="Variant_1">
         <textarea id="questionText" placeholder="Savol matni"></textarea>
-        <input type="text" id="imgUrl" placeholder="Rasm linki (URL)">
+        <input type="text" id="imgUrl" placeholder="Rasm linki (.jpg)">
         <input type="text" id="options" placeholder="Variantlar (A, B, C, D)">
         <input type="text" id="correct" placeholder="To'g'ri javob">
         <button id="sendBtn" onclick="saveToFirebase()">Bazaga Yuborish</button>
     </div>
 
     <script>
-        // DIQQAT: Mana shu konfiguratsiya bazaga ulanishni ta'minlaydi
         const firebaseConfig = {
-            databaseURL: "https://matematika-7e82f-default-rtdb.firebaseio.com"
+            // MANZIL TO'G'RILANDI:
+            databaseURL: "https://matematika-7e82f-default-rtdb.europe-west1.firebasedatabase.app/"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -40,21 +40,20 @@
                 answer: document.getElementById('correct').value
             };
 
-            if(!data.options || !data.answer) return alert("Variantlar va javobni kiriting!");
+            if(!data.options || !data.answer) return alert("Variantlar va javobni to'liq yozing!");
 
             btn.disabled = true;
             btn.innerText = "Yuborilmoqda...";
 
-            // Ma'lumotni bazaga yuborish
             db.ref("tests/Variant_1").push(data)
                 .then(() => {
-                    alert("Savol muvaffaqiyatli saqlandi!");
+                    alert("Savol saqlandi!");
                     location.reload(); 
                 })
                 .catch(e => {
                     alert("Xatolik: " + e.message);
                     btn.disabled = false;
-                    btn.innerText = "Qaytadan urinish";
+                    btn.innerText = "Qaytadan yuborish";
                 });
         }
     </script>
